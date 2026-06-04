@@ -1,0 +1,340 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-size:14px;line-height:1.6;color:var(--color-text-primary)}
+.spec{padding:1.5rem 0;max-width:100%}
+h1{font-size:20px;font-weight:500;margin-bottom:4px}
+h2{font-size:16px;font-weight:500;margin:2rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+h3{font-size:14px;font-weight:500;margin:1.25rem 0 0.5rem;color:var(--color-text-primary)}
+p{margin-bottom:0.75rem;color:var(--color-text-secondary);font-size:13px}
+.meta{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-gray{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+pre{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;font-size:12px;font-family:var(--font-mono);overflow-x:auto;margin:0.5rem 0 1rem;line-height:1.5}
+code{font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;color:var(--color-text-primary)}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:0.5rem 0 1rem}
+th{text-align:left;padding:6px 10px;font-weight:500;font-size:11px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);text-transform:uppercase;letter-spacing:0.04em}
+td{padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);vertical-align:top}
+td:first-child{color:var(--color-text-primary);font-weight:500}
+.section{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.constraint{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.constraint:last-child{border-bottom:none}
+.constraint-label{font-size:11px;font-weight:500;min-width:80px;padding:2px 8px;border-radius:10px;text-align:center;flex-shrink:0;margin-top:1px}
+.must{background:#FCEBEB;color:#A32D2D}
+.should{background:#FAEEDA;color:#633806}
+.must-not{background:#FCEBEB;color:#791F1F}
+.constraint p{margin:0;font-size:13px}
+.file-tree{font-family:var(--font-mono);font-size:12px;line-height:1.8;color:var(--color-text-secondary)}
+.file-tree .dir{color:var(--color-text-primary);font-weight:500}
+.copy-btn{float:right;font-size:11px;padding:3px 8px;cursor:pointer;border-radius:4px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);margin-top:-2px}
+.copy-btn:hover{background:var(--color-background-secondary)}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:1.5rem 0}
+</style>
+
+<div class="spec">
+  <h1>Molecular viewer — technical specification</h1>
+  <div class="meta">
+    <span class="badge badge-blue">v1.0</span>
+    <span class="badge badge-gray">React 19 · Three.js r168 · TypeScript 5 · Vite 6</span>
+    <span class="badge badge-gray">Web app · PWA</span>
+  </div>
+
+  <h2>1. Overview</h2>
+  <p>A browser-based interactive 3D molecular viewer. Users upload PDB or mmCIF files (or fetch by RCSB accession code) and explore the structure using multiple rendering modes: ball-and-stick, space-filling, ribbon, and backbone. The viewer supports atom selection, distance measurement, secondary structure highlighting, and screenshot export. Performance must support proteins up to ~20,000 atoms at 60 fps on a mid-range desktop.</p>
+
+  <h2>2. Tech stack</h2>
+  <table>
+    <thead><tr><th>Concern</th><th>Library / tool</th><th>Version</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>UI framework</td><td>React</td><td>19</td><td>Concurrent mode; use <code>useTransition</code> for representation switches</td></tr>
+      <tr><td>3D rendering</td><td>Three.js</td><td>r168</td><td>Progressive WebGPU enhancement; fall back to WebGL2</td></tr>
+      <tr><td>State</td><td>Zustand</td><td>5</td><td>Single store, sliced by domain (see §6)</td></tr>
+      <tr><td>Build</td><td>Vite</td><td>6</td><td>Native ESM; workers via <code>?worker</code> suffix</td></tr>
+      <tr><td>Language</td><td>TypeScript</td><td>5.4+</td><td>Strict mode on</td></tr>
+      <tr><td>Testing</td><td>Vitest + Testing Library</td><td>latest</td><td>Unit + component tests</td></tr>
+      <tr><td>Linting</td><td>ESLint + Prettier</td><td>latest</td><td>Airbnb config base</td></tr>
+      <tr><td>CSS</td><td>CSS Modules</td><td>—</td><td>No CSS-in-JS</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. File structure</h2>
+  <div class="section">
+    <div class="file-tree">
+<span class="dir">molecule-viewer/</span><br>
+├── <span class="dir">src/</span><br>
+│   ├── main.tsx<br>
+│   ├── App.tsx<br>
+│   ├── <span class="dir">parsers/</span><br>
+│   │   ├── PDBParser.ts<br>
+│   │   ├── mmCIFParser.ts<br>
+│   │   └── types.ts          <span style="color:var(--color-text-tertiary)"> # Atom, Bond, Chain, Residue</span><br>
+│   ├── <span class="dir">engine/</span><br>
+│   │   ├── BondCalculator.ts<br>
+│   │   ├── StructureAnalyser.ts<br>
+│   │   ├── SpatialIndex.ts<br>
+│   │   └── moleculeWorker.ts  <span style="color:var(--color-text-tertiary)"> # Web Worker entry</span><br>
+│   ├── <span class="dir">renderers/</span><br>
+│   │   ├── MoleculeViewer.ts  <span style="color:var(--color-text-tertiary)"> # Three.js scene orchestrator</span><br>
+│   │   ├── AtomRenderer.ts<br>
+│   │   ├── BondRenderer.ts<br>
+│   │   ├── RibbonRenderer.ts<br>
+│   │   └── SurfaceRenderer.ts<br>
+│   ├── <span class="dir">store/</span><br>
+│   │   ├── index.ts<br>
+│   │   ├── moleculeSlice.ts<br>
+│   │   ├── viewerSlice.ts<br>
+│   │   └── selectionSlice.ts<br>
+│   ├── <span class="dir">components/</span><br>
+│   │   ├── ViewerCanvas.tsx<br>
+│   │   ├── ControlsPanel.tsx<br>
+│   │   ├── SelectionInfo.tsx<br>
+│   │   ├── MeasureOverlay.tsx<br>
+│   │   └── FileUpload.tsx<br>
+│   └── <span class="dir">utils/</span><br>
+│       ├── colorSchemes.ts<br>
+│       ├── geometryUtils.ts<br>
+│       └── constants.ts<br>
+├── <span class="dir">public/</span><br>
+│   └── manifest.json          <span style="color:var(--color-text-tertiary)"> # PWA manifest</span><br>
+├── <span class="dir">tests/</span><br>
+├── vite.config.ts<br>
+├── tsconfig.json<br>
+└── package.json
+    </div>
+  </div>
+
+  <h2>4. Data model</h2>
+  <p>Define in <code>src/parsers/types.ts</code>. All coordinate values in Ångströms.</p>
+  <pre>interface Atom {
+  serial: number
+  name: string           // e.g. "CA", "N", "O"
+  element: string        // e.g. "C", "N", "O", "H"
+  residueName: string    // e.g. "ALA", "GLY"
+  chainID: string
+  residueSeq: number
+  x: number
+  y: number
+  z: number
+  bFactor?: number
+  occupancy?: number
+}
+
+interface Bond {
+  atomA: number          // serial index
+  atomB: number
+  order: 1 | 2 | 3
+}
+
+interface Residue {
+  seq: number
+  name: string
+  chainID: string
+  atoms: number[]        // atom serial indices
+  secondaryStructure?: 'helix' | 'sheet' | 'loop'
+}
+
+interface Chain {
+  id: string
+  residues: Residue[]
+}
+
+interface MoleculeData {
+  atoms: Atom[]
+  bonds: Bond[]
+  chains: Chain[]
+  center: [number, number, number]
+  boundingRadius: number
+}</pre>
+
+  <h2>5. Parsers</h2>
+  <h3>PDBParser.ts</h3>
+  <p>Parse ATOM, HETATM, CONECT, HELIX, and SHEET records. Return <code>MoleculeData</code>. Must handle multi-model files (use MODEL 1 only). Must not throw on missing optional fields.</p>
+  <pre>export function parsePDB(text: string): MoleculeData</pre>
+
+  <h3>mmCIFParser.ts</h3>
+  <p>Parse <code>_atom_site</code> loop. Map <code>label_atom_id</code>, <code>label_comp_id</code>, <code>label_asym_id</code>, <code>label_seq_id</code>, <code>Cartn_x/y/z</code>. Return same <code>MoleculeData</code> shape.</p>
+  <pre>export function parseMMCIF(text: string): MoleculeData</pre>
+
+  <h3>RCSB fetch</h3>
+  <p>Fetch mmCIF by accession code using <code>https://files.rcsb.org/download/{id}.cif</code>. Validate 4-char alphanumeric accession before fetch. Handle 404 with a user-facing error message.</p>
+
+  <h2>6. Web Worker (engine)</h2>
+  <p>Heavy computation runs in <code>moleculeWorker.ts</code>, imported via Vite's <code>new Worker(new URL('./engine/moleculeWorker.ts', import.meta.url), { type: 'module' })</code>.</p>
+  <p>The worker accepts a <code>MoleculeTask</code> message and posts back a <code>MoleculeResult</code>:</p>
+  <pre>type MoleculeTask =
+  | { type: 'process'; atoms: Atom[] }
+
+type MoleculeResult =
+  | { type: 'bonds'; bonds: Bond[] }
+  | { type: 'secondaryStructure'; residues: Residue[] }
+  | { type: 'spatialIndex'; ready: true }</pre>
+
+  <h3>BondCalculator.ts</h3>
+  <p>Calculate covalent bonds by element-pair distance thresholds. Use a k-d tree (<code>SpatialIndex.ts</code>) to avoid O(n²) search. Do not recalculate if CONECT records are present in PDB input.</p>
+
+  <h3>StructureAnalyser.ts</h3>
+  <p>Assign secondary structure from HELIX/SHEET records if present, otherwise use a simplified DSSP heuristic (backbone dihedral angles). Annotate each <code>Residue</code> with <code>secondaryStructure</code>.</p>
+
+  <h2>7. Rendering</h2>
+  <h3>MoleculeViewer.ts — scene orchestrator</h3>
+  <p>Owns the Three.js <code>Scene</code>, <code>Camera</code>, <code>Renderer</code>, <code>OrbitControls</code>, and <code>CSS2DRenderer</code> for labels. Exposes a clean public API consumed by <code>ViewerCanvas.tsx</code>:</p>
+  <pre>class MoleculeViewer {
+  constructor(canvas: HTMLCanvasElement)
+  load(data: MoleculeData): void
+  setRepresentation(mode: RepresentationMode): void
+  setColorScheme(scheme: ColorScheme): void
+  highlightResidue(seq: number, chainID: string): void
+  clearHighlights(): void
+  addMeasurement(atomA: Atom, atomB: Atom): void
+  clearMeasurements(): void
+  takeScreenshot(): string           // returns data URL
+  resetCamera(): void
+  dispose(): void
+}</pre>
+
+  <h3>Representation modes</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Implementation</th><th>Performance note</th></tr></thead>
+    <tbody>
+      <tr><td>ball-and-stick</td><td><code>InstancedMesh</code> per element for atoms; cylinder <code>Mesh</code> per bond</td><td>Default mode</td></tr>
+      <tr><td>space-filling</td><td><code>InstancedMesh</code> per element; van der Waals radii from constants</td><td>No bonds rendered</td></tr>
+      <tr><td>ribbon</td><td><code>CatmullRomCurve3</code> through Cα atoms; <code>TubeGeometry</code> coloured by secondary structure</td><td>Fastest for large proteins</td></tr>
+      <tr><td>backbone</td><td><code>BufferGeometry</code> line through N, Cα, C atoms</td><td>Minimal geometry</td></tr>
+    </tbody>
+  </table>
+
+  <h3>LOD strategy</h3>
+  <p>Apply Three.js <code>LOD</code>: full geometry at 0–40 Å camera distance, simplified (reduced sphere segments, bonds hidden) at 40–120 Å, backbone-only beyond 120 Å.</p>
+
+  <h3>WebGPU progressive enhancement</h3>
+  <pre>const renderer = await (async () => {
+  if ('gpu' in navigator) {
+    try {
+      const { WebGPURenderer } = await import('three/webgpu')
+      const r = new WebGPURenderer({ canvas })
+      await r.init()
+      return r
+    } catch {}
+  }
+  return new THREE.WebGLRenderer({ canvas, antialias: true })
+})()</pre>
+
+  <h2>8. State management</h2>
+  <p>Single Zustand store in <code>src/store/index.ts</code>, split into three slices:</p>
+  <table>
+    <thead><tr><th>Slice</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>moleculeSlice</td><td><code>data: MoleculeData | null</code>, <code>loading: boolean</code>, <code>error: string | null</code></td></tr>
+      <tr><td>viewerSlice</td><td><code>representation: RepresentationMode</code>, <code>colorScheme: ColorScheme</code>, <code>showHydrogens: boolean</code></td></tr>
+      <tr><td>selectionSlice</td><td><code>selectedAtom: Atom | null</code>, <code>measurements: Measurement[]</code>, <code>highlightedChain: string | null</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>9. Components</h2>
+  <h3>ViewerCanvas.tsx</h3>
+  <p>Mounts <code>MoleculeViewer</code> against a <code>canvas</code> ref. Subscribes to store; calls viewer API on state changes. Handles resize via <code>ResizeObserver</code>. Cleans up on unmount via <code>viewer.dispose()</code>.</p>
+
+  <h3>ControlsPanel.tsx</h3>
+  <p>Renders representation toggle (4 buttons), colour scheme selector, hydrogen toggle, chain visibility checkboxes, and screenshot button. All actions dispatch to Zustand store.</p>
+
+  <h3>FileUpload.tsx</h3>
+  <p>Drag-and-drop zone accepting <code>.pdb</code> and <code>.cif</code> files. Text input for RCSB accession code with fetch button. On load, dispatches to <code>moleculeSlice</code> and triggers worker processing.</p>
+
+  <h3>SelectionInfo.tsx</h3>
+  <p>Displays element, residue name, chain, sequence number, and coordinates for the selected atom. Empty state when nothing selected.</p>
+
+  <h3>MeasureOverlay.tsx</h3>
+  <p>Lists active distance measurements as a stack of pills showing atom pair and distance in Å. Includes a clear-all button.</p>
+
+  <h2>10. Interaction behaviour</h2>
+  <table>
+    <thead><tr><th>Interaction</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>Left drag</td><td>Rotate (OrbitControls)</td></tr>
+      <tr><td>Right drag / two-finger drag</td><td>Pan</td></tr>
+      <tr><td>Scroll / pinch</td><td>Zoom</td></tr>
+      <tr><td>Single click on atom</td><td>Select atom; update SelectionInfo</td></tr>
+      <tr><td>Double click on atom</td><td>Add to measurement pair; show distance when two selected</td></tr>
+      <tr><td>Click on background</td><td>Deselect</td></tr>
+      <tr><td>Double click on background</td><td>Clear measurements</td></tr>
+    </tbody>
+  </table>
+  <p>Use Three.js <code>Raycaster</code> against instanced mesh instances. On mobile, map touch events: single tap = click, two-finger touch = pan/zoom.</p>
+
+  <h2>11. Colour schemes</h2>
+  <p>Implement in <code>src/utils/colorSchemes.ts</code>. Expose as <code>type ColorScheme = 'element' | 'chain' | 'residueType' | 'bFactor' | 'secondaryStructure'</code>.</p>
+  <table>
+    <thead><tr><th>Scheme</th><th>Logic</th></tr></thead>
+    <tbody>
+      <tr><td>element</td><td>CPK: C=#909090, N=#3050F8, O=#FF0D0D, H=#FFFFFF, S=#FFFF30, P=#FF8000</td></tr>
+      <tr><td>chain</td><td>Cycle a fixed palette of 8 distinct hues by chain ID</td></tr>
+      <tr><td>residueType</td><td>Hydrophobic=white, polar=green, charged+=blue, charged-=red, special=yellow</td></tr>
+      <tr><td>bFactor</td><td>Gradient blue (low) → white → red (high)</td></tr>
+      <tr><td>secondaryStructure</td><td>Helix=magenta, sheet=yellow, loop=white</td></tr>
+    </tbody>
+  </table>
+
+  <h2>12. Requirements</h2>
+  <div class="section" style="padding:0.75rem 1.25rem">
+    <div class="constraint">
+      <span class="constraint-label must">MUST</span>
+      <p>Parse valid PDB and mmCIF files without throwing. Surface parse errors as user-visible messages, not console errors.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must">MUST</span>
+      <p>Run bond calculation and secondary structure detection in a Web Worker. The main thread must not block during processing.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must">MUST</span>
+      <p>Maintain 60 fps during rotation for proteins up to 10,000 atoms in ball-and-stick mode on a mid-range desktop (tested in Chrome).</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must">MUST</span>
+      <p>Support touch interactions on iOS Safari and Android Chrome (rotate, pan, zoom, tap-to-select).</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must">MUST</span>
+      <p>All TypeScript compiled with <code>strict: true</code>. No <code>any</code> types except at parser input boundaries.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label should">SHOULD</span>
+      <p>Use WebGPU renderer when available; fall back to WebGL2 silently.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label should">SHOULD</span>
+      <p>Support RCSB accession fetch as an alternative to file upload.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label should">SHOULD</span>
+      <p>Be installable as a PWA (manifest + service worker caching for the app shell).</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must-not">MUST NOT</span>
+      <p>Block the main thread for more than 16 ms during any user interaction.</p>
+    </div>
+    <div class="constraint">
+      <span class="constraint-label must-not">MUST NOT</span>
+      <p>Make network requests except for RCSB fetch (user-initiated) and CDN assets at build time.</p>
+    </div>
+  </div>
+
+  <h2>13. Testing</h2>
+  <table>
+    <thead><tr><th>Test</th><th>What to verify</th></tr></thead>
+    <tbody>
+      <tr><td>PDBParser unit</td><td>Parses 1CRN (crambin) correctly: 327 atoms, correct element counts, centre of mass within tolerance</td></tr>
+      <tr><td>mmCIFParser unit</td><td>Parses same structure from CIF; output matches PDB parse within float tolerance</td></tr>
+      <tr><td>BondCalculator unit</td><td>Correct bond count for a known small molecule (e.g. alanine dipeptide)</td></tr>
+      <tr><td>ColorScheme unit</td><td>All element types return valid hex strings; no undefined returns</td></tr>
+      <tr><td>ViewerCanvas component</td><td>Mounts without error; dispose called on unmount</td></tr>
+      <tr><td>Store slices</td><td>State transitions correct for load, representation change, selection, measurement add/clear</td></tr>
+    </tbody>
+  </table>
+
+  <h2>14. Out of scope (v1)</h2>
+  <p>Molecular dynamics trajectory playback · electron density map overlay · solvent-accessible surface computation · multi-structure alignment · structure editing or export · user authentication or persistence.</p>
+
+  <div class="divider"></div>
+  <p style="font-size:11px;color:var(--color-text-tertiary)">Intended for use as a coding agent prompt. Implement sections in order: types → parsers → engine → renderers → store → components.</p>
+</div>
