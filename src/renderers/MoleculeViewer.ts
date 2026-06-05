@@ -20,6 +20,7 @@ export class MoleculeViewer {
   private ribbonRenderer: RibbonRenderer;
   private backboneLines: THREE.LineSegments | null = null;
   private moleculeGroup: THREE.Group | null = null;
+  private bondGroup: THREE.Group | null = null;
   private animationId: number | null = null;
   /** Guards async init against React StrictMode mount/unmount/remount races */
   private initGeneration = 0;
@@ -126,6 +127,29 @@ export class MoleculeViewer {
 
     this.buildRepresentation();
     this.resetCamera();
+  }
+
+  /** Update covalent bonds after worker processing without rebuilding atom meshes */
+  refreshBonds(bonds: MoleculeData['bonds']): void {
+    if (!this.data || !this.moleculeGroup) return;
+
+    this.data = { ...this.data, bonds };
+
+    if (this.bondGroup) {
+      this.bondGroup.removeFromParent();
+      this.disposeObject(this.bondGroup);
+      this.bondGroup = null;
+    }
+
+    if (this.representation !== 'ball-and-stick' || bonds.length === 0) return;
+
+    this.bondGroup = this.bondRenderer.build(
+      bonds,
+      this.data.atoms,
+      0.15,
+      this.coordinateCenter,
+    );
+    this.moleculeGroup.add(this.bondGroup);
   }
 
   private getFilteredAtoms(): Atom[] {
@@ -401,6 +425,7 @@ export class MoleculeViewer {
           this.disposeObject(child);
         });
     }
+    this.bondGroup = null;
   }
 
   private clearScene(): void {

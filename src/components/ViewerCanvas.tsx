@@ -8,6 +8,7 @@ export function ViewerCanvas() {
   const viewerRef = useRef<MoleculeViewer | null>(null);
 
   const data = useStore((s) => s.data);
+  const structureVersion = useStore((s) => s.structureVersion);
   const representation = useStore((s) => s.representation);
   const colorScheme = useStore((s) => s.colorScheme);
   const showHydrogens = useStore((s) => s.showHydrogens);
@@ -28,14 +29,30 @@ export function ViewerCanvas() {
     };
   }, []);
 
+  // Load a new structure when the user opens a file or fetches from RCSB
   useEffect(() => {
-    if (data && viewerRef.current) {
+    if (!data || structureVersion === 0) return;
+
+    const applyLoad = () => {
+      if (!viewerRef.current) return false;
       viewerRef.current.load(data);
-      if (visibleChains.size === 0) {
-        useStore.getState().setVisibleChains(new Set(data.chains.map((c) => c.id)));
-      }
+      return true;
+    };
+
+    if (!applyLoad()) {
+      const frame = requestAnimationFrame(() => {
+        applyLoad();
+      });
+      return () => cancelAnimationFrame(frame);
     }
-  }, [data]);
+    return undefined;
+  }, [structureVersion, data]);
+
+  // Refresh bonds after worker completes without rebuilding the whole scene
+  useEffect(() => {
+    if (!data || structureVersion === 0) return;
+    viewerRef.current?.refreshBonds(data.bonds);
+  }, [data?.bonds, structureVersion]);
 
   useEffect(() => {
     viewerRef.current?.setRepresentation(representation);

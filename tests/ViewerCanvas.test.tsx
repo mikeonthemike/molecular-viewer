@@ -11,7 +11,7 @@ vi.mock('../src/renderers/MoleculeViewer', () => ({
     setVisibleChains: vi.fn(),
     clearMeasurements: vi.fn(),
     addMeasurement: vi.fn(),
-    pickAtom: vi.fn(),
+    refreshBonds: vi.fn(),
     dispose: vi.fn(),
   })),
 }));

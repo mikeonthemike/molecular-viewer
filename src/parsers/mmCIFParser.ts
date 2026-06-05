@@ -15,10 +15,12 @@ export function parseMMCIF(text: string): MoleculeData {
     return idx >= 0 ? (row[idx] ?? '').trim() : '';
   };
 
-  for (const line of lines) {
+  parseLoop: for (const line of lines) {
     const trimmed = line.trim();
+    if (!trimmed) continue;
 
     if (trimmed === 'loop_') {
+      if (dataStarted && atoms.length > 0) break parseLoop;
       inAtomSiteLoop = false;
       headers = [];
       dataStarted = false;
@@ -32,18 +34,25 @@ export function parseMMCIF(text: string): MoleculeData {
     }
 
     if (inAtomSiteLoop && headers.length > 0) {
-      if (trimmed.startsWith('_') || trimmed.startsWith('#') || trimmed.startsWith('data_')) {
-        if (dataStarted) break;
+      if (trimmed.startsWith('_') || trimmed.startsWith('data_')) {
+        if (dataStarted) break parseLoop;
         inAtomSiteLoop = false;
         headers = [];
         continue;
       }
 
+      // Skip comment lines inside the loop without ending parse
+      if (trimmed.startsWith('#')) continue;
+
       if (trimmed.startsWith(';')) continue;
 
-      // Handle multi-token rows (simple split — mmCIF values are typically unquoted)
       const tokens = splitCifRow(trimmed);
-      if (tokens.length < headers.length) continue;
+      if (tokens.length === 0) continue;
+
+      // Pad short rows — some mmCIF variants omit trailing optional columns
+      while (tokens.length < headers.length) {
+        tokens.push('.');
+      }
 
       dataStarted = true;
 
@@ -62,6 +71,8 @@ export function parseMMCIF(text: string): MoleculeData {
       const bFactorStr = getCol(tokens, '_atom_site.B_iso_or_equiv');
       const occupancyStr = getCol(tokens, '_atom_site.occupancy');
 
+      if (!name || (x === 0 && y === 0 && z === 0 && !elementField)) continue;
+
       const serial = atoms.length + 1;
       const atom: Atom = {
         serial,
@@ -75,8 +86,8 @@ export function parseMMCIF(text: string): MoleculeData {
         z,
       };
 
-      if (bFactorStr) atom.bFactor = parseFloat(bFactorStr);
-      if (occupancyStr) atom.occupancy = parseFloat(occupancyStr);
+      if (bFactorStr && bFactorStr !== '.') atom.bFactor = parseFloat(bFactorStr);
+      if (occupancyStr && occupancyStr !== '.') atom.occupancy = parseFloat(occupancyStr);
 
       atoms.push(atom);
     }

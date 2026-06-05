@@ -5,6 +5,8 @@ export interface MoleculeSlice {
   data: MoleculeData | null;
   loading: boolean;
   error: string | null;
+  /** Increments on each new structure load so the viewer can detect fresh files */
+  structureVersion: number;
   setData: (data: MoleculeData) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -17,8 +19,14 @@ export const createMoleculeSlice: StateCreator<MoleculeSlice> = (set) => ({
   data: null,
   loading: false,
   error: null,
+  structureVersion: 0,
 
-  setData: (data) => set({ data, error: null, loading: false }),
+  setData: (data) =>
+    set((state) => ({
+      data,
+      error: null,
+      structureVersion: state.structureVersion + 1,
+    })),
 
   setLoading: (loading) => set({ loading }),
 
@@ -47,5 +55,5 @@ export const createMoleculeSlice: StateCreator<MoleculeSlice> = (set) => ({
       return { data: { ...state.data, chains } };
     }),
 
-  clearMolecule: () => set({ data: null, error: null, loading: false }),
+  clearMolecule: () => set({ data: null, error: null, loading: false, structureVersion: 0 }),
 });

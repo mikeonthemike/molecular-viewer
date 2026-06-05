@@ -20,6 +20,7 @@ describe('store slices', () => {
       colorScheme: 'element',
       showHydrogens: true,
       visibleChains: new Set(),
+      structureVersion: 0,
       selectedAtom: null,
       measurements: [],
       highlightedChain: null,
@@ -27,9 +28,10 @@ describe('store slices', () => {
     });
   });
 
-  it('loads molecule data', () => {
+  it('loads molecule data and increments structure version', () => {
     useStore.getState().setData(minimalData);
     expect(useStore.getState().data).toEqual(minimalData);
+    expect(useStore.getState().structureVersion).toBe(1);
     expect(useStore.getState().error).toBeNull();
   });
 
