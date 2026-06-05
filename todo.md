@@ -14,3 +14,14 @@ Support mmCIF structure factor files (e.g. `1EXR-sf.cif`) that contain `_refln` 
 - [ ] Cache computed maps per structure so contour adjustments stay interactive
 
 Currently, structure factor files show a clear error directing users to the coordinate mmCIF or RCSB fetch.
+
+## Different display modes
+- [ ] Option to display different molecular shape structures like alpha helix, beta-pleated sheets
+
+## Useful Information
+- [ ] Add information panel about the molecule
+- [ ] Find a good source for information to pull in and how to cache/persist it
+
+## Search and Index
+- [ ] Search for specific molecules that can then be looked up
+- 
