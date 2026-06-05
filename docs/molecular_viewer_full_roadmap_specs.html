@@ -1,0 +1,388 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-size:13px;line-height:1.6;color:var(--color-text-primary)}
+.wrap{padding:1rem 0}
+.phase{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:1.5rem;overflow:hidden}
+.phase-header{padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px}
+.phase-icon{width:36px;height:36px;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.p1-icon{background:#E1F5EE;color:#0F6E56}
+.p2-icon{background:#EEEDFE;color:#534AB7}
+.p3-icon{background:#FAECE7;color:#993C1D}
+.p4-icon{background:#FAEEDA;color:#854F0B}
+.phase-title{font-size:15px;font-weight:500}
+.phase-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.phase-body{padding:1.25rem}
+h3{font-size:13px;font-weight:500;margin:1.25rem 0 0.5rem;color:var(--color-text-primary)}
+h3:first-child{margin-top:0}
+p{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem}
+pre{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:11px;font-family:var(--font-mono);overflow-x:auto;margin:0.5rem 0 1rem;line-height:1.5}
+code{font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);padding:1px 4px;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:11px;margin:0.5rem 0 1rem}
+th{text-align:left;padding:5px 8px;font-weight:500;font-size:10px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);text-transform:uppercase;letter-spacing:0.04em}
+td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);vertical-align:top}
+td:first-child{color:var(--color-text-primary);font-weight:500;white-space:nowrap}
+.req{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.req:last-child{border-bottom:none}
+.rl{font-size:10px;font-weight:500;padding:2px 6px;border-radius:8px;flex-shrink:0;margin-top:1px;min-width:62px;text-align:center}
+.must{background:#FCEBEB;color:#A32D2D}
+.should{background:#FAEEDA;color:#633806}
+.mustnot{background:#FCEBEB;color:#791F1F}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:1rem 0}
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;margin-left:6px}
+.quick{background:#E1F5EE;color:#0F6E56}
+.med{background:#FAEEDA;color:#854F0B}
+.large{background:#FAECE7;color:#993C1D}
+.note{background:var(--color-background-secondary);border-left:2px solid var(--color-border-secondary);border-radius:0;padding:8px 12px;font-size:11px;color:var(--color-text-secondary);margin:0.75rem 0}
+</style>
+
+<div class="wrap">
+
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-icon p1-icon"><i class="ti ti-books" aria-hidden="true"></i></div>
+    <div>
+      <div class="phase-title">Phase 1 — Curated structure library</div>
+      <div class="phase-sub">Transform the viewer from a blank canvas into a browsable resource</div>
+    </div>
+  </div>
+  <div class="phase-body">
+
+    <h3>Overview</h3>
+    <p>Add a landing/browse layer to the viewer. Users arrive at a categorised gallery of landmark structures instead of an empty upload prompt. Each structure loads directly into the viewer with one click. File upload remains available for advanced users.</p>
+
+    <h3>Data model</h3>
+    <pre>interface LibraryEntry {
+  id: string              // e.g. "1CRN"
+  accession: string       // RCSB accession code
+  name: string            // common name: "Crambin"
+  organism: string        // "Crambe hispanica"
+  category: StructureCategory
+  tags: string[]          // ["small protein","plant","disulfide bonds"]
+  description: string     // 2-3 sentence plain-English summary
+  atomCount: number
+  resolution: number      // Å
+  year: number            // year of deposition
+  defaultRepresentation: RepresentationMode
+  defaultColorScheme: ColorScheme
+  highlightResidues?: number[]   // residues to highlight on load
+}</pre>
+    <pre>type StructureCategory =
+  | 'enzyme'
+  | 'receptor'
+  | 'antibody'
+  | 'virus'
+  | 'dna-rna'
+  | 'structural'
+  | 'hormone'
+  | 'transport'</pre>
+
+    <h3>Initial library — 16 structures across 8 categories</h3>
+    <table>
+      <thead><tr><th>Accession</th><th>Name</th><th>Category</th><th>Why it's here</th></tr></thead>
+      <tbody>
+        <tr><td>1CRN</td><td>Crambin</td><td>Structural</td><td>Tiny (327 atoms), great for first load</td></tr>
+        <tr><td>1HHO</td><td>Haemoglobin</td><td>Transport</td><td>Iconic, everyone knows it</td></tr>
+        <tr><td>1INS</td><td>Insulin</td><td>Hormone</td><td>Clinically famous, small and clear</td></tr>
+        <tr><td>1GFL</td><td>GFP</td><td>Structural</td><td>Beta-barrel is visually striking</td></tr>
+        <tr><td>1ATP</td><td>PKA (kinase)</td><td>Enzyme</td><td>Classic enzyme with visible ATP pocket</td></tr>
+        <tr><td>1LYZ</td><td>Lysozyme</td><td>Enzyme</td><td>First enzyme structure ever solved</td></tr>
+        <tr><td>6LU7</td><td>COVID-19 protease</td><td>Enzyme</td><td>Culturally relevant, high recognition</td></tr>
+        <tr><td>1IGT</td><td>Antibody IgG</td><td>Antibody</td><td>Y-shape is instantly recognisable</td></tr>
+        <tr><td>1DNA</td><td>B-DNA</td><td>DNA/RNA</td><td>Classic double helix</td></tr>
+        <tr><td>2HHB</td><td>Deoxy-haemoglobin</td><td>Transport</td><td>Compare with 1HHO: conformational change</td></tr>
+        <tr><td>1AON</td><td>GroEL chaperonin</td><td>Structural</td><td>Barrel shape, visually impressive</td></tr>
+        <tr><td>3PGK</td><td>Phosphoglycerate kinase</td><td>Enzyme</td><td>Two-domain hinge motion</td></tr>
+        <tr><td>1BNA</td><td>Dodecamer DNA</td><td>DNA/RNA</td><td>Well-studied, clear helix geometry</td></tr>
+        <tr><td>2BTV</td><td>Bluetongue virus</td><td>Virus</td><td>Icosahedral symmetry, visually dramatic</td></tr>
+        <tr><td>1GZX</td><td>Potassium channel</td><td>Receptor</td><td>Membrane protein, Nobel prize structure</td></tr>
+        <tr><td>3L9H</td><td>Ribosome (30S)</td><td>Structural</td><td>RNA+protein complex, largest in library</td></tr>
+      </tbody>
+    </table>
+
+    <h3>New files</h3>
+    <pre>src/
+├── data/
+│   └── library.ts          # LibraryEntry[] array — static, no API
+├── components/
+│   ├── LibraryBrowser.tsx  # Category filter + structure grid
+│   ├── StructureCard.tsx   # Single card: name, organism, tags, load button
+│   └── SearchBar.tsx       # Filter by name/tag; RCSB accession fallback
+└── store/
+    └── librarySlice.ts     # activeCategory, searchQuery, recentlyViewed[]</pre>
+
+    <h3>LibraryBrowser layout</h3>
+    <p>Full-width grid above the viewer. Category pills filter the grid in real time (client-side, no fetch). Search filters by name and tag. Each <code>StructureCard</code> shows name, organism, category badge, atom count, and a "Load" button. Clicking load calls <code>fetchAndLoad(accession)</code> which fetches the mmCIF from RCSB, parses it, and dispatches to <code>moleculeSlice</code>. The library collapses to a slim bar once a structure is loaded.</p>
+
+    <h3>Requirements</h3>
+    <div class="req"><span class="rl must">MUST</span><p>Library data is static (no backend). All metadata lives in <code>library.ts</code>. Structure files are fetched from RCSB on demand — not bundled.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Category filter and search operate client-side with no network calls.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Show a loading state on the viewer canvas while mmCIF is fetching and parsing.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Handle RCSB fetch failure gracefully: show inline error, do not crash.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Cache fetched mmCIF text in <code>sessionStorage</code> keyed by accession to avoid re-fetching on revisit within the same session.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Track <code>recentlyViewed</code> (last 5) in Zustand and persist to <code>localStorage</code>.</p></div>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-icon p2-icon"><i class="ti ti-school" aria-hidden="true"></i></div>
+    <div>
+      <div class="phase-title">Phase 2 — Educational mode</div>
+      <div class="phase-sub">Guided tours and learning scaffolding on top of the library</div>
+    </div>
+  </div>
+  <div class="phase-body">
+
+    <h3>Overview</h3>
+    <p>An optional guided layer that sits on top of the viewer. In educational mode the viewer becomes a step-by-step tour: the camera moves to a preset position, specific residues are highlighted, and a callout panel explains what the user is looking at. Tours are authored as static data alongside the library entries.</p>
+
+    <h3>Data model</h3>
+    <pre>interface TourStep {
+  id: string
+  title: string
+  body: string              // plain-English explanation, 2-4 sentences
+  cameraPosition: [number, number, number]
+  cameraTarget: [number, number, number]
+  highlightResidues: number[]
+  highlightChains?: string[]
+  representation?: RepresentationMode   // override for this step
+  colorScheme?: ColorScheme
+}
+
+interface Tour {
+  id: string
+  structureId: string       // links to LibraryEntry.id
+  title: string
+  audience: 'general' | 'undergraduate' | 'advanced'
+  estimatedMinutes: number
+  steps: TourStep[]
+}</pre>
+
+    <h3>Initial tours — one per category</h3>
+    <table>
+      <thead><tr><th>Structure</th><th>Tour title</th><th>Audience</th><th>Steps</th></tr></thead>
+      <tbody>
+        <tr><td>Haemoglobin (1HHO)</td><td>How oxygen is carried in blood</td><td>General</td><td>5</td></tr>
+        <tr><td>Lysozyme (1LYZ)</td><td>How an enzyme destroys bacteria</td><td>Undergraduate</td><td>6</td></tr>
+        <tr><td>GFP (1GFL)</td><td>The protein that made biology glow</td><td>General</td><td>4</td></tr>
+        <tr><td>COVID-19 protease (6LU7)</td><td>How antiviral drugs work</td><td>General</td><td>5</td></tr>
+        <tr><td>Potassium channel (1GZX)</td><td>How ions cross a membrane</td><td>Undergraduate</td><td>6</td></tr>
+        <tr><td>Ribosome 30S (3L9H)</td><td>The molecular machine that builds proteins</td><td>Undergraduate</td><td>7</td></tr>
+      </tbody>
+    </table>
+
+    <h3>New files</h3>
+    <pre>src/
+├── data/
+│   └── tours.ts            # Tour[] array — static
+├── components/
+│   ├── TourPlayer.tsx      # Step nav: prev/next, progress bar, step callout
+│   ├── TourCallout.tsx     # Floating panel: step title + body text
+│   └── TourSelector.tsx    # List available tours for a loaded structure
+└── store/
+    └── tourSlice.ts        # activeTour, currentStep, isPlaying</pre>
+
+    <h3>Tour player behaviour</h3>
+    <p>Entering a tour overlays a semi-transparent panel at the bottom of the viewer. Previous/Next buttons advance steps. On each step transition: camera animates to <code>cameraPosition</code>/<code>cameraTarget</code> using a 600 ms tween (Three.js TWEEN or custom lerp), highlights update, representation switches if specified. A progress bar shows step N of total. Exit button returns to normal viewer mode and restores prior state.</p>
+    <p>Camera animation must use <code>useTransition</code> so the UI remains responsive during the tween. Do not block interaction.</p>
+
+    <h3>Embed mode</h3>
+    <p>Add <code>?embed=true&tour=haemoglobin-oxygen</code> URL params. In embed mode: hide the library browser and controls panel, auto-start the specified tour, render in a minimal chrome suitable for iframe use. Export an embed snippet from the share panel (Phase 4).</p>
+
+    <h3>Requirements</h3>
+    <div class="req"><span class="rl must">MUST</span><p>Tour data is static. No CMS or backend. Tours live in <code>tours.ts</code> alongside library data.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Camera transitions are animated (not instant). Duration 500–700 ms.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Exiting a tour restores the viewer to its pre-tour representation, colour scheme, and camera position.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Tours are only offered for the currently loaded structure.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Support keyboard navigation: left/right arrow keys advance tour steps.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Embed mode suppresses all chrome except the tour player and viewer canvas.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Mark completed tours in <code>localStorage</code> so returning users see progress.</p></div>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-icon p3-icon"><i class="ti ti-brain" aria-hidden="true"></i></div>
+    <div>
+      <div class="phase-title">Phase 3 — AI annotation layer</div>
+      <div class="phase-sub">LLM-powered residue explanation and structure Q&A</div>
+    </div>
+  </div>
+  <div class="phase-body">
+
+    <div class="note">This phase requires a server-side API route to hold the LLM API key. Recommended: a single Vercel Edge Function at <code>/api/annotate</code>. Do not expose API keys client-side.</div>
+
+    <h3>Overview</h3>
+    <p>Two AI features: (1) click any atom/residue to get a plain-English explanation of its role in the protein, and (2) a persistent Q&A panel where users can ask free-form questions about the loaded structure. Both features call the same <code>/api/annotate</code> edge function, which constructs a prompt from the structure metadata and the user's query.</p>
+
+    <h3>API contract</h3>
+    <pre>POST /api/annotate
+Content-Type: application/json
+
+{
+  "type": "residue" | "question",
+  "structure": {
+    "accession": string,
+    "name": string,
+    "organism": string,
+    "category": string,
+    "description": string
+  },
+  "residue"?: {
+    "seq": number,
+    "name": string,        // e.g. "HIS"
+    "chainID": string,
+    "secondaryStructure": string
+  },
+  "question"?: string
+}
+
+Response: { "answer": string }   // streaming preferred</pre>
+
+    <h3>Prompt templates</h3>
+    <pre>// Residue annotation
+`You are a structural biology tutor. The user is viewing ${structure.name}
+from ${structure.organism}, a ${structure.category}.
+They have clicked residue ${residue.name} ${residue.seq} on chain
+${residue.chainID} (${residue.secondaryStructure}).
+Explain in 2-3 sentences what this residue does and why it matters.
+Write for a curious non-specialist. No jargon without explanation.`
+
+// Q&A
+`You are a structural biology tutor. The user is viewing ${structure.name}.
+${structure.description}
+Answer the following question in plain English (3-5 sentences max):
+${question}`</pre>
+
+    <h3>New files</h3>
+    <pre>src/
+├── components/
+│   ├── AIPanel.tsx         # Collapsible side panel: Q&A input + history
+│   └── ResidueAnnotation.tsx # Inline callout shown on residue click
+├── hooks/
+│   └── useAnnotation.ts    # Fetch wrapper for /api/annotate with streaming
+└── api/                    # Vercel edge functions (outside src/)
+    └── annotate.ts         # Edge function: validates input, calls LLM, streams response</pre>
+
+    <h3>Interaction flow</h3>
+    <p>Residue click (already wired in Phase 1): if AI mode is enabled, after showing <code>SelectionInfo</code> also fetch a residue annotation and display it in a callout below the selection info panel. Show a skeleton loader while streaming. Render streamed text token-by-token.</p>
+    <p>Q&A panel: persistent collapsible panel on the right edge. Text input at the bottom. Questions and answers stack upward in a scrollable history. Each answer includes the structure name and a timestamp. History is session-only (not persisted).</p>
+
+    <h3>Rate limiting and cost controls</h3>
+    <table>
+      <thead><tr><th>Control</th><th>Implementation</th></tr></thead>
+      <tbody>
+        <tr><td>Per-session limit</td><td>Max 20 annotations + 10 Q&A per session. Track in <code>sessionStorage</code>. Show soft warning at 80%, hard block at 100%.</td></tr>
+        <tr><td>Input validation</td><td>Edge function rejects requests with unrecognised accession codes or questions over 500 chars.</td></tr>
+        <tr><td>Model choice</td><td>Use a fast, low-cost model (e.g. Claude Haiku). Residue annotations are short and latency matters.</td></tr>
+        <tr><td>Caching</td><td>Cache residue annotations in <code>sessionStorage</code> keyed by <code>accession:chainID:seq</code>. Same residue clicked twice = no second API call.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Requirements</h3>
+    <div class="req"><span class="rl must">MUST</span><p>LLM API key never leaves the server. All LLM calls go through the edge function.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>AI features are opt-in. A toggle in the controls panel enables/disables the annotation layer. Default off.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Streaming responses render token-by-token. Do not wait for the full response before showing text.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>All LLM errors (rate limit, timeout, 5xx) surface as user-visible inline messages, not console errors.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Cache residue annotations for the session to minimise API calls and latency.</p></div>
+    <div class="req"><span class="rl mustnot">MUST NOT</span><p>Make LLM calls on mouse hover. Only on explicit click or Q&A submit.</p></div>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-icon p4-icon"><i class="ti ti-share" aria-hidden="true"></i></div>
+    <div>
+      <div class="phase-title">Phase 4 — Share, export and audience expansion</div>
+      <div class="phase-sub">Get work out of the tool and broaden reach</div>
+    </div>
+  </div>
+  <div class="phase-body">
+
+    <h3>Overview</h3>
+    <p>Four distinct capabilities bundled in this phase: shareable URLs that restore viewer state, image/PNG export, embed snippet generation for course materials, and a public JavaScript API so third parties can embed and control the viewer programmatically.</p>
+
+    <h3>1. Shareable URLs</h3>
+    <p>Encode viewer state as URL search params. No backend required — all state lives in the URL.</p>
+    <pre>// URL schema
+?s=1HHO           // accession
+&r=ribbon         // representation
+&c=secondaryStructure  // colour scheme
+&cx=12.4&cy=-3.1&cz=48.0  // camera position
+&tx=0&ty=0&tz=0   // camera target
+&hl=64,87,102     // highlighted residue seq numbers
+&tour=step-3      // active tour step (optional)</pre>
+    <p>On load, parse params in <code>App.tsx</code> before initialising the viewer. Dispatch parsed state to Zustand before first render. A "Copy link" button in the controls panel serialises current Zustand state to URL and writes to clipboard.</p>
+
+    <h3>2. Image export</h3>
+    <pre>// In MoleculeViewer.ts — already scaffolded, expand to:
+takeScreenshot(options?: {
+  width?: number        // default: current canvas width
+  height?: number       // default: current canvas height
+  scale?: number        // default: 2 (retina)
+  background?: string   // default: '#ffffff'
+  includeLegend?: boolean
+}): Promise&lt;Blob&gt;</pre>
+    <p>Render to an offscreen canvas at the requested resolution. If <code>includeLegend</code> is true, composite a colour scheme legend and structure name using the Canvas 2D API before exporting. Trigger browser download via <code>URL.createObjectURL</code>.</p>
+
+    <h3>3. Embed snippet</h3>
+    <p>A modal in the share panel generates a ready-to-paste iframe snippet:</p>
+    <pre>&lt;iframe
+  src="https://molecular-viewer-eta.vercel.app/?embed=true&s=6LU7&tour=covid-protease"
+  width="800"
+  height="500"
+  frameborder="0"
+  allowfullscreen
+&gt;&lt;/iframe&gt;</pre>
+    <p>The modal lets users configure accession, starting tour, width, and height before copying. Embed mode (from Phase 2) hides all chrome except the viewer and optional tour player.</p>
+
+    <h3>4. Public JavaScript API</h3>
+    <p>Expose a minimal global API so third-party pages can control an embedded viewer via <code>postMessage</code>:</p>
+    <pre>// Host page sends commands to the iframe
+iframe.contentWindow.postMessage({
+  type: 'mv:load',
+  accession: '1HHO'
+}, '*')
+
+iframe.contentWindow.postMessage({
+  type: 'mv:setRepresentation',
+  mode: 'ribbon'
+}, '*')
+
+iframe.contentWindow.postMessage({
+  type: 'mv:highlight',
+  residues: [64, 87, 102]
+}, '*')
+
+// Viewer emits events back to host
+window.parent.postMessage({
+  type: 'mv:atomSelected',
+  atom: { element: 'N', residueSeq: 87, chainID: 'A' }
+}, '*')</pre>
+    <p>Implement in a <code>postMessageBridge.ts</code> module. Document all message types in <code>README.md</code> under a "Public API" section.</p>
+
+    <h3>New files</h3>
+    <pre>src/
+├── utils/
+│   ├── shareUrl.ts           # encode/decode Zustand state ↔ URL params
+│   ├── imageExport.ts        # offscreen canvas renderer + legend compositor
+│   └── postMessageBridge.ts  # inbound command handler + outbound event emitter
+└── components/
+    └── ShareModal.tsx        # Copy link · Download image · Embed snippet tabs</pre>
+
+    <h3>Requirements</h3>
+    <div class="req"><span class="rl must">MUST</span><p>Shareable URLs restore accession, representation, colour scheme, and camera position exactly. Round-trip must be lossless within float tolerance (2 decimal places).</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Image export works at 2× resolution minimum. Output must be a valid PNG downloadable in all modern browsers.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p>Embed snippet is copy-ready: one click, no editing required for default use.</p></div>
+    <div class="req"><span class="rl must">MUST</span><p><code>postMessage</code> handler validates message origin and type before acting. Unknown message types are silently ignored.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Share modal has three tabs: link, image, embed. Active tab persists in <code>sessionStorage</code>.</p></div>
+    <div class="req"><span class="rl should">SHOULD</span><p>Image export legend includes structure name, representation mode, and colour scheme label.</p></div>
+    <div class="req"><span class="rl mustnot">MUST NOT</span><p>URL params exceed 2000 characters. If state cannot be encoded within this limit, omit highlighted residues first, then camera position.</p></div>
+
+    <div class="divider"></div>
+    <p style="font-size:11px;color:var(--color-text-tertiary)">Implement phases in order. Each phase depends on the previous: Phase 2 tours reference Phase 1 library IDs. Phase 3 AI context uses Phase 1 structure metadata. Phase 4 share URLs encode Phase 2 tour state.</p>
+  </div>
+</div>
+
+</div>
