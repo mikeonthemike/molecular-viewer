@@ -1,11 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
+import { getTourById } from '../data/tours';
 import { MoleculeViewer } from '../renderers/MoleculeViewer';
 import { useStore } from '../store';
+import { applyTourStep } from '../utils/applyTourStep';
 import styles from './ViewerCanvas.module.css';
 
-export function ViewerCanvas() {
+interface ViewerCanvasProps {
+  viewerRef?: RefObject<MoleculeViewer | null>;
+}
+
+export function ViewerCanvas({ viewerRef: externalViewerRef }: ViewerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const viewerRef = useRef<MoleculeViewer | null>(null);
+  const internalViewerRef = useRef<MoleculeViewer | null>(null);
+  const viewerRef = externalViewerRef ?? internalViewerRef;
 
   const data = useStore((s) => s.data);
   const loading = useStore((s) => s.loading);
@@ -15,9 +22,17 @@ export function ViewerCanvas() {
   const showHydrogens = useStore((s) => s.showHydrogens);
   const visibleChains = useStore((s) => s.visibleChains);
   const measurements = useStore((s) => s.measurements);
+  const activeTourId = useStore((s) => s.activeTourId);
+  const currentStepIndex = useStore((s) => s.currentStepIndex);
+  const restoredViewerState = useStore((s) => s.restoredViewerState);
+
+  const setRepresentation = useStore((s) => s.setRepresentation);
+  const setColorScheme = useStore((s) => s.setColorScheme);
+  const setVisibleChains = useStore((s) => s.setVisibleChains);
   const selectAtom = useStore((s) => s.selectAtom);
   const addMeasurementPair = useStore((s) => s.addMeasurementPair);
   const clearMeasurements = useStore((s) => s.clearMeasurements);
+  const clearRestoredViewerState = useStore((s) => s.clearRestoredViewerState);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -28,9 +43,8 @@ export function ViewerCanvas() {
       viewer.dispose();
       viewerRef.current = null;
     };
-  }, []);
+  }, [viewerRef]);
 
-  // Load a new structure when the user opens a file or fetches from RCSB
   useEffect(() => {
     if (!data || structureVersion === 0) return;
 
@@ -47,31 +61,30 @@ export function ViewerCanvas() {
       return () => cancelAnimationFrame(frame);
     }
     return undefined;
-  }, [structureVersion, data]);
+  }, [structureVersion, data, viewerRef]);
 
-  // Refresh bonds after worker completes without rebuilding the whole scene
   useEffect(() => {
     if (!data || structureVersion === 0) return;
     viewerRef.current?.refreshBonds(data.bonds);
-  }, [data?.bonds, structureVersion]);
+  }, [data?.bonds, structureVersion, viewerRef]);
 
   useEffect(() => {
     viewerRef.current?.setRepresentation(representation);
-  }, [representation]);
+  }, [representation, viewerRef]);
 
   useEffect(() => {
     viewerRef.current?.setColorScheme(colorScheme);
-  }, [colorScheme]);
+  }, [colorScheme, viewerRef]);
 
   useEffect(() => {
     viewerRef.current?.setShowHydrogens(showHydrogens);
-  }, [showHydrogens]);
+  }, [showHydrogens, viewerRef]);
 
   useEffect(() => {
     if (visibleChains.size > 0) {
       viewerRef.current?.setVisibleChains(visibleChains);
     }
-  }, [visibleChains]);
+  }, [visibleChains, viewerRef]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -81,7 +94,51 @@ export function ViewerCanvas() {
     for (const m of measurements) {
       viewer.addMeasurement(m.atomA, m.atomB);
     }
-  }, [measurements]);
+  }, [measurements, viewerRef]);
+
+  // Apply tour step when active tour or step index changes
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !data || !activeTourId) return;
+
+    const tour = getTourById(activeTourId);
+    const step = tour?.steps[currentStepIndex];
+    if (!step) return;
+
+    let cancelled = false;
+    void applyTourStep(viewer, step, data, setRepresentation, setColorScheme, setVisibleChains).then(() => {
+      if (cancelled) return;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeTourId,
+    currentStepIndex,
+    data,
+    structureVersion,
+    setRepresentation,
+    setColorScheme,
+    setVisibleChains,
+    viewerRef,
+  ]);
+
+  useEffect(() => {
+    if (!activeTourId) {
+      viewerRef.current?.clearHighlights();
+    }
+  }, [activeTourId, viewerRef]);
+
+  // Restore pre-tour camera after exit
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !restoredViewerState) return;
+
+    void viewer
+      .animateCameraTo(restoredViewerState.cameraPosition, restoredViewerState.cameraTarget)
+      .then(() => clearRestoredViewerState());
+  }, [restoredViewerState, clearRestoredViewerState, viewerRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -134,7 +191,7 @@ export function ViewerCanvas() {
       canvas.removeEventListener('touchend', onTouchEnd);
       if (clickTimer) clearTimeout(clickTimer);
     };
-  }, [selectAtom, addMeasurementPair, clearMeasurements]);
+  }, [selectAtom, addMeasurementPair, clearMeasurements, viewerRef]);
 
   return (
     <div className={styles.container} data-testid="viewer-canvas">

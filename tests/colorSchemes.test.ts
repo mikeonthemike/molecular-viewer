@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAtomColor, getElementColor } from '../src/utils/colorSchemes';
+import { getAtomColor, getChainColor, getElementColor } from '../src/utils/colorSchemes';
 import type { Atom } from '../src/parsers/types';
 
 const sampleAtom: Atom = {
@@ -20,6 +20,14 @@ describe('colorSchemes', () => {
       const color = getElementColor(el);
       expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/);
     }
+  });
+
+  it('assigns distinct colours to different chains', () => {
+    const colorA = getChainColor('A');
+    const colorB = getChainColor('B');
+    expect(colorA).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(colorB).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(colorA).not.toBe(colorB);
   });
 
   it('returns valid hex for all color schemes', () => {

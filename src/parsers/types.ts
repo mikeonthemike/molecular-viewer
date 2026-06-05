@@ -94,3 +94,46 @@ export interface LibraryEntry {
   defaultColorScheme: ColorScheme;
   highlightResidues?: number[];
 }
+
+export interface TourStep {
+  id: string;
+  title: string;
+  body: string;
+  /** World-space camera position (used when scale fields are omitted) */
+  cameraPosition: [number, number, number];
+  /** World-space orbit target */
+  cameraTarget: [number, number, number];
+  /** Portable camera offset from center in units of boundingRadius */
+  cameraPositionScale?: [number, number, number];
+  cameraTargetScale?: [number, number, number];
+  highlightResidues: number[];
+  highlightChains?: string[];
+  /** Restrict visible chains for this step (e.g. hide ligand asym units) */
+  visibleChains?: string[];
+  representation?: RepresentationMode;
+  colorScheme?: ColorScheme;
+}
+
+/** What the linked RCSB deposit actually contains — used by tour validation */
+export type TourAssemblyContext = 'asymmetric-unit' | 'biological-assembly';
+
+export interface Tour {
+  id: string;
+  structureId: string;
+  title: string;
+  audience: 'general' | 'undergraduate' | 'advanced';
+  estimatedMinutes: number;
+  /** Polymer chains expected after parsing — must match RCSB deposit */
+  expectedPolymerChainCount?: number;
+  /** Clarifies whether tour copy should reference full biological assembly */
+  assemblyContext?: TourAssemblyContext;
+  steps: TourStep[];
+}
+
+export interface SavedViewerState {
+  representation: RepresentationMode;
+  colorScheme: ColorScheme;
+  cameraPosition: [number, number, number];
+  cameraTarget: [number, number, number];
+  visibleChains: string[];
+}

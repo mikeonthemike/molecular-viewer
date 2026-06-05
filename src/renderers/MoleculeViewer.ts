@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Atom, ColorScheme, MoleculeData, RepresentationMode } from '../parsers/types';
 import { ATOM_DISPLAY_RADIUS, VDW_RADII } from '../utils/constants';
-import { computeBFactorRange, getAtomColor } from '../utils/colorSchemes';
+import { computeBFactorRange, getAtomColor, getChainColor } from '../utils/colorSchemes';
+import { easeInOutCubic, lerp3 } from '../utils/tourCamera';
 import { AtomRenderer } from './AtomRenderer';
 import { BondRenderer } from './BondRenderer';
 import { RibbonRenderer } from './RibbonRenderer';
@@ -18,7 +19,7 @@ export class MoleculeViewer {
   private atomRenderer: AtomRenderer;
   private bondRenderer: BondRenderer;
   private ribbonRenderer: RibbonRenderer;
-  private backboneLines: THREE.LineSegments | null = null;
+  private backboneGroup: THREE.Group | null = null;
   private moleculeGroup: THREE.Group | null = null;
   private bondGroup: THREE.Group | null = null;
   private animationId: number | null = null;
@@ -39,6 +40,15 @@ export class MoleculeViewer {
   private resizeObserver: ResizeObserver | null = null;
   private bFactorRange: [number, number] = [0, 100];
   private residueSS = new Map<string, 'helix' | 'sheet' | 'loop'>();
+  private cameraTween: {
+    startPos: [number, number, number];
+    endPos: [number, number, number];
+    startTarget: [number, number, number];
+    endTarget: [number, number, number];
+    startTime: number;
+    duration: number;
+    resolve: () => void;
+  } | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -173,7 +183,13 @@ export class MoleculeViewer {
       });
 
     if (this.representation === 'ribbon') {
-      const ribbon = this.ribbonRenderer.build(this.data, this.visibleChains, this.residueSS, center);
+      const ribbon = this.ribbonRenderer.build(
+        this.data,
+        this.visibleChains,
+        this.residueSS,
+        center,
+        this.colorScheme,
+      );
       this.moleculeGroup.add(ribbon);
       return;
     }
@@ -181,7 +197,7 @@ export class MoleculeViewer {
     if (this.representation === 'backbone') {
       const backbone = this.buildBackbone(atoms, center);
       if (backbone) {
-        this.backboneLines = backbone;
+        this.backboneGroup = backbone;
         this.moleculeGroup.add(backbone);
       }
       return;
@@ -202,10 +218,10 @@ export class MoleculeViewer {
     this.moleculeGroup.add(detail);
   }
 
-  private buildBackbone(atoms: Atom[], center: [number, number, number]): THREE.LineSegments | null {
+  private buildBackbone(atoms: Atom[], center: [number, number, number]): THREE.Group | null {
     const [cx, cy, cz] = center;
     const caAtoms = atoms.filter((a) => a.name.trim() === 'CA');
-    const positions: number[] = [];
+    const group = new THREE.Group();
 
     const byChain = new Map<string, Atom[]>();
     for (const atom of caAtoms) {
@@ -214,21 +230,27 @@ export class MoleculeViewer {
       byChain.set(atom.chainID, list);
     }
 
-    for (const chainAtoms of byChain.values()) {
+    for (const [chainID, chainAtoms] of byChain) {
       chainAtoms.sort((a, b) => a.residueSeq - b.residueSeq);
+      const positions: number[] = [];
       for (let i = 0; i < chainAtoms.length - 1; i += 1) {
         const a = chainAtoms[i]!;
         const b = chainAtoms[i + 1]!;
         positions.push(a.x - cx, a.y - cy, a.z - cz, b.x - cx, b.y - cy, b.z - cz);
       }
+      if (positions.length === 0) continue;
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const lineColor =
+        this.colorScheme === 'secondaryStructure'
+          ? 0xaaaaaa
+          : new THREE.Color(getChainColor(chainID)).getHex();
+      const material = new THREE.LineBasicMaterial({ color: lineColor, linewidth: 1 });
+      group.add(new THREE.LineSegments(geometry, material));
     }
 
-    if (positions.length === 0) return null;
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    const material = new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 1 });
-    return new THREE.LineSegments(geometry, material);
+    return group.children.length > 0 ? group : null;
   }
 
   setRepresentation(mode: RepresentationMode): void {
@@ -264,29 +286,61 @@ export class MoleculeViewer {
   }
 
   highlightResidue(seq: number, chainID: string): void {
+    this.highlightResidues([{ seq, chainID }]);
+  }
+
+  /** Highlight multiple residues — soft glowing spheres at residue centroids */
+  highlightResidues(residues: Array<{ seq: number; chainID?: string }>): void {
     this.clearHighlights();
-    if (!this.data) return;
+    if (!this.data || residues.length === 0) return;
 
-    const residue = this.data.chains
-      .find((c) => c.id === chainID)
-      ?.residues.find((r) => r.seq === seq);
-
-    if (!residue) return;
-
-    const positions: number[] = [];
     const [cx, cy, cz] = this.coordinateCenter;
-    for (const serial of residue.atoms) {
-      const atom = this.data.atoms.find((a) => a.serial === serial);
-      if (atom) positions.push(atom.x - cx, atom.y - cy, atom.z - cz);
+    const seen = new Set<string>();
+
+    for (const { seq, chainID } of residues) {
+      const chains = chainID
+        ? this.data.chains.filter((c) => c.id === chainID)
+        : this.data.chains;
+
+      for (const chain of chains) {
+        const key = `${chain.id}:${seq}`;
+        if (seen.has(key)) continue;
+
+        const residue = chain.residues.find((r) => r.seq === seq);
+        if (!residue) continue;
+        seen.add(key);
+
+        let sx = 0;
+        let sy = 0;
+        let sz = 0;
+        let count = 0;
+        for (const serial of residue.atoms) {
+          const atom = this.data.atoms.find((a) => a.serial === serial);
+          if (atom) {
+            sx += atom.x;
+            sy += atom.y;
+            sz += atom.z;
+            count += 1;
+          }
+        }
+        if (count === 0) continue;
+
+        const geometry = new THREE.SphereGeometry(2.0, 20, 20);
+        const material = new THREE.MeshStandardMaterial({
+          color: 0xff9900,
+          emissive: 0xff6600,
+          emissiveIntensity: 0.35,
+          transparent: true,
+          opacity: 0.45,
+          roughness: 0.25,
+          metalness: 0.05,
+          depthWrite: false,
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.set(sx / count - cx, sy / count - cy, sz / count - cz);
+        this.highlightGroup.add(sphere);
+      }
     }
-
-    if (positions.length === 0) return;
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({ color: 0xffff00, size: 8, sizeAttenuation: true });
-    const points = new THREE.Points(geometry, material);
-    this.highlightGroup.add(points);
   }
 
   clearHighlights(): void {
@@ -356,6 +410,44 @@ export class MoleculeViewer {
     return this.canvas.toDataURL('image/png');
   }
 
+  getCameraState(): {
+    position: [number, number, number];
+    target: [number, number, number];
+  } {
+    const target = this.controls?.target ?? new THREE.Vector3();
+    return {
+      position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
+      target: [target.x, target.y, target.z],
+    };
+  }
+
+  /** Animate camera to a new position and orbit target over durationMs (default 600) */
+  animateCameraTo(
+    position: [number, number, number],
+    target: [number, number, number],
+    durationMs = 600,
+  ): Promise<void> {
+    if (this.cameraTween) {
+      this.cameraTween.resolve();
+      this.cameraTween = null;
+    }
+
+    const startPos = this.getCameraState().position;
+    const startTarget = this.getCameraState().target;
+
+    return new Promise((resolve) => {
+      this.cameraTween = {
+        startPos,
+        endPos: position,
+        startTarget,
+        endTarget: target,
+        startTime: performance.now(),
+        duration: durationMs,
+        resolve,
+      };
+    });
+  }
+
   resetCamera(): void {
     if (!this.data) return;
     const [cx, cy, cz] = this.data.center;
@@ -364,6 +456,52 @@ export class MoleculeViewer {
     this.camera.position.set(cx, cy, cz + dist);
     this.controls?.target.set(cx, cy, cz);
     this.controls?.update();
+  }
+
+  /** Dev helper: log current camera state as JSON for tour authoring */
+  logCameraState(): void {
+    const state = this.getCameraState();
+    const data = this.data;
+    if (!data) {
+      console.log(JSON.stringify(state, null, 2));
+      return;
+    }
+    const [cx, cy, cz] = data.center;
+    const r = data.boundingRadius;
+    const scale = {
+      positionScale: [
+        (state.position[0] - cx) / r,
+        (state.position[1] - cy) / r,
+        (state.position[2] - cz) / r,
+      ],
+      targetScale: [
+        (state.target[0] - cx) / r,
+        (state.target[1] - cy) / r,
+        (state.target[2] - cz) / r,
+      ],
+    };
+    console.log('Camera state:', JSON.stringify({ ...state, ...scale }, null, 2));
+  }
+
+  private updateCameraTween(): void {
+    if (!this.cameraTween || !this.controls) return;
+
+    const { startPos, endPos, startTarget, endTarget, startTime, duration, resolve } =
+      this.cameraTween;
+    const rawT = Math.min(1, (performance.now() - startTime) / duration);
+    const t = easeInOutCubic(rawT);
+
+    const pos = lerp3(startPos, endPos, t);
+    const tgt = lerp3(startTarget, endTarget, t);
+
+    this.camera.position.set(pos[0], pos[1], pos[2]);
+    this.controls.target.set(tgt[0], tgt[1], tgt[2]);
+    this.controls.update();
+
+    if (rawT >= 1) {
+      this.cameraTween = null;
+      resolve();
+    }
   }
 
   updateSecondaryStructure(residues: Array<{ seq: number; chainID: string; secondaryStructure?: string }>): void {
@@ -404,15 +542,16 @@ export class MoleculeViewer {
     const parent = this.canvas.parentElement;
     if (!parent || parent.clientWidth === 0 || parent.clientHeight === 0) return;
 
+    this.updateCameraTween();
     this.controls?.update();
     this.renderer.render(this.scene, this.camera);
   };
 
   private clearSceneObjects(): void {
-    if (this.backboneLines && this.moleculeGroup) {
-      this.moleculeGroup.remove(this.backboneLines);
-      this.disposeObject(this.backboneLines);
-      this.backboneLines = null;
+    if (this.backboneGroup && this.moleculeGroup) {
+      this.moleculeGroup.remove(this.backboneGroup);
+      this.disposeObject(this.backboneGroup);
+      this.backboneGroup = null;
     }
 
     if (this.moleculeGroup) {
@@ -436,7 +575,7 @@ export class MoleculeViewer {
       this.disposeObject(this.moleculeGroup);
       this.moleculeGroup = null;
     }
-    this.backboneLines = null;
+    this.backboneGroup = null;
     this.clearHighlights();
     this.clearMeasurements();
   }
@@ -458,6 +597,11 @@ export class MoleculeViewer {
     this.disposed = true;
     this.initGeneration += 1;
     this.rendererReady = false;
+
+    if (this.cameraTween) {
+      this.cameraTween.resolve();
+      this.cameraTween = null;
+    }
 
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);

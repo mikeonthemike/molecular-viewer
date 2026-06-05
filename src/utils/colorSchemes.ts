@@ -90,6 +90,11 @@ export function getElementColor(element: string): string {
   return CPK[key] ?? '#FF1493';
 }
 
+/** Distinct hue for a polymer chain — used by ribbon and backbone renderers */
+export function getChainColor(chainID: string): string {
+  return CHAIN_PALETTE[hashChain(chainID) % CHAIN_PALETTE.length]!;
+}
+
 export function getAtomColor(
   atom: Atom,
   scheme: ColorScheme,

@@ -1,7 +1,14 @@
-import { useTransition } from 'react';
+import { useTransition, type RefObject } from 'react';
 import { useStore } from '../store';
 import type { ColorScheme, RepresentationMode } from '../parsers/types';
+import type { MoleculeViewer } from '../renderers/MoleculeViewer';
+import { isPolymerChain } from '../utils/polymerChains';
+import { TourSelector } from './TourSelector';
 import styles from './ControlsPanel.module.css';
+
+interface ControlsPanelProps {
+  viewerRef: RefObject<MoleculeViewer | null>;
+}
 
 const REPRESENTATIONS: { mode: RepresentationMode; label: string }[] = [
   { mode: 'ball-and-stick', label: 'Ball & Stick' },
@@ -18,7 +25,7 @@ const COLOR_SCHEMES: { scheme: ColorScheme; label: string }[] = [
   { scheme: 'secondaryStructure', label: 'Secondary Structure' },
 ];
 
-export function ControlsPanel() {
+export function ControlsPanel({ viewerRef }: ControlsPanelProps) {
   const [isPending, startTransition] = useTransition();
 
   const representation = useStore((s) => s.representation);
@@ -99,7 +106,9 @@ export function ControlsPanel() {
         <div className={styles.section}>
           <span className={styles.label}>Chains</span>
           <div className={styles.chainList}>
-            {data.chains.map((chain) => (
+            {data.chains
+              .filter((chain) => isPolymerChain(chain, data.atoms))
+              .map((chain) => (
               <label key={chain.id} className={styles.checkbox}>
                 <input
                   type="checkbox"
@@ -116,6 +125,8 @@ export function ControlsPanel() {
       <button type="button" className={styles.screenshotBtn} onClick={handleScreenshot}>
         Screenshot
       </button>
+
+      <TourSelector viewerRef={viewerRef} />
     </aside>
   );
 }

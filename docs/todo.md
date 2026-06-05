@@ -26,5 +26,12 @@ Currently, structure factor files show a clear error directing users to the coor
 - [x] Curated structure library (Phase 1): category filter, search, RCSB fetch on demand
 - [ ] Full structure search / index beyond the curated library
 
+## Educational mode (Phase 2)
+- [x] Guided tours: tourSlice, camera animation, highlights, TourPlayer UI
+- [x] Pilot tour: haemoglobin (1HHO) — 5 steps
+- [x] Embed mode: `?embed=true&tour=haemoglobin-oxygen`
+- [ ] Remaining tours: 1LYZ, 1GFL, 6LU7, 1GZX, 3L9H (run `npm run validate-tours` after authoring)
+
 ## Display
 - [ ] Get the right hand panel to match the scroll for the main canvas
+- [ ] Add a copyright and other footer standards

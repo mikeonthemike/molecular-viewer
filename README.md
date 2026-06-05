@@ -29,8 +29,30 @@ Open http://localhost:5173 and try loading `1CRN` from RCSB or drop a `.pdb` / `
 | `npm run dev` | Start development server |
 | `npm run build` | Production build |
 | `npm run test` | Run Vitest unit tests |
+| `npm run validate-tours` | Validate guided tours against live RCSB structures |
+| `npm run inspect-structure -- <ID>` | Print chain inventory and suggested tour metadata for an accession |
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier |
+
+## Guided tours (authoring)
+
+Tours live in `src/data/tours.ts`. Before adding or editing a tour:
+
+1. **Inspect the structure** — fetches the RCSB asymmetric unit and prints polymer vs ligand chains, suggested `visibleChains`, and `expectedPolymerChainCount`:
+
+   ```bash
+   npm run inspect-structure -- 1HHO
+   ```
+
+2. **Author steps** — add entries to `src/data/tours.ts`. Use `visibleChains` from the report on every step so ligand asym units do not appear as extra chains. Set camera scales by loading the structure in the viewer and calling `viewerRef.current?.logCameraState()` in DevTools.
+
+3. **Validate** — checks chain IDs, residue highlights, and metadata against RCSB:
+
+   ```bash
+   npm run validate-tours
+   ```
+
+See `AGENTS.md` for the full agent workflow.
 
 ## Tech stack
 

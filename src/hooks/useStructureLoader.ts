@@ -3,6 +3,7 @@ import { processMoleculeInWorker } from '../engine/processMolecule';
 import { parseMoleculeFile } from '../parsers/parseMoleculeFile';
 import type { LibraryEntry, MoleculeData } from '../parsers/types';
 import { useStore } from '../store';
+import { getPolymerChainIds } from '../utils/polymerChains';
 import { fetchRCSBStructureCached } from '../utils/rcsbCache';
 
 // Shared across all hook consumers so library and file upload do not leak workers
@@ -23,25 +24,33 @@ export function useStructureLoader() {
   const addRecentlyViewed = useStore((s) => s.addRecentlyViewed);
   const setLoadedLibraryId = useStore((s) => s.setLoadedLibraryId);
   const setLibraryExpanded = useStore((s) => s.setLibraryExpanded);
+  const exitTour = useStore((s) => s.exitTour);
 
   const loadMolecule = useCallback(
     (data: MoleculeData, sourceName: string, entry?: LibraryEntry) => {
       workerCleanup?.();
 
+      if (useStore.getState().activeTourId) {
+        exitTour();
+      }
+
       setLoading(true);
       setError(null);
       clearMeasurements();
       selectAtom(null);
-      setVisibleChains(new Set(data.chains.map((c) => c.id)));
+      const polymerIds = getPolymerChainIds(data);
+      setVisibleChains(
+        new Set(polymerIds.length > 0 ? polymerIds : data.chains.map((c) => c.id)),
+      );
       setData(data);
 
       if (entry) {
         setRepresentation(entry.defaultRepresentation);
         setColorScheme(entry.defaultColorScheme);
-        setLoadedLibraryId(entry.id);
-      } else {
-        setLoadedLibraryId(null);
       }
+      // Track accession so guided tours can match the loaded structure
+      const accession = entry?.id ?? sourceName.trim().toUpperCase();
+      setLoadedLibraryId(/^[A-Z0-9]{4}$/.test(accession) ? accession : null);
 
       setLibraryExpanded(false);
       addRecentlyViewed(sourceName);
@@ -74,6 +83,7 @@ export function useStructureLoader() {
       addRecentlyViewed,
       setLoadedLibraryId,
       setLibraryExpanded,
+      exitTour,
     ],
   );
 

@@ -54,6 +54,15 @@
   color: #7ab0e0;
 }
 
+.tourBadge {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  background: #2a2840;
+  color: #a89ae0;
+}
+
 .atomCount {
   font-size: 0.6875rem;
   color: #6a7a8a;

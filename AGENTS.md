@@ -14,6 +14,8 @@ Use this document when editing, reviewing, or extending the codebase. Prefer sma
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run lint` | ESLint (requires `eslint-plugin-react` — see Known issues) |
 | `npm run format` | Prettier on `src/` and `tests/` |
+| `npm run validate-tours` | Tour validation against live RCSB fetches |
+| `npm run inspect-structure -- <ID>` | Tour authoring: chain inventory + suggested metadata |
 
 **Version:** Bump `version` in `package.json` when shipping functional changes.
 
@@ -153,6 +155,14 @@ Tests live in `tests/` (not co-located). Vitest + jsdom; globals enabled.
 3. If it affects the canvas, add a `useEffect` in `ViewerCanvas.tsx` calling the matching `MoleculeViewer` method.
 4. Extend `store.test.ts`.
 
+### Add or edit a guided tour
+
+1. Run `npm run inspect-structure -- <ACCESSION>` — prints polymer vs ligand chains, center/radius, and suggested `expectedPolymerChainCount`, `assemblyContext`, and `visibleChains` (see `src/utils/tourAuthoringReport.ts`, CLI in `scripts/inspect-structure.ts`).
+2. Add or update the tour in `src/data/tours.ts`. Set `visibleChains` on **every** step to polymer chain IDs only so ligand asym units do not appear in the chain list.
+3. Author camera scales in the running viewer via `MoleculeViewer.logCameraState()` (exposed on the viewer ref in DevTools).
+4. Run `npm run validate-tours` — uses `src/utils/validateTour.ts` and live RCSB fetches; fix any reported issues before shipping.
+5. Bump `package.json` version when shipping tour changes.
+
 ### Performance-sensitive work
 
 - Run off the main thread (extend `moleculeWorker.ts` or add a dedicated worker).
@@ -233,6 +243,11 @@ src/
     moleculeSlice.ts / viewerSlice.ts / selectionSlice.ts / index.ts
   utils/
     constants.ts / colorSchemes.ts / geometryUtils.ts
+    structureInventory.ts / tourAuthoringReport.ts / validateTour.ts
+  data/
+    tours.ts              # Guided tour definitions
+scripts/
+  inspect-structure.ts    # Tour authoring CLI
 tests/                    # Vitest suites + fixtures/
 ```
 

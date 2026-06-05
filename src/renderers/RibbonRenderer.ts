@@ -1,19 +1,21 @@
 import * as THREE from 'three';
-import type { MoleculeData } from '../parsers/types';
+import type { ColorScheme, MoleculeData } from '../parsers/types';
+import { getChainColor } from '../utils/colorSchemes';
 
 const SS_COLORS = {
   helix: 0xff00ff,
   sheet: 0xffff00,
-  loop: 0xffffff,
+  loop: 0xaaaaaa,
 };
 
-/** Catmull-Rom tube ribbon through Cα atoms coloured by secondary structure */
+/** Catmull-Rom tube ribbon through Cα atoms */
 export class RibbonRenderer {
   build(
     data: MoleculeData,
     visibleChains: Set<string>,
     residueSS: Map<string, 'helix' | 'sheet' | 'loop'>,
     center: [number, number, number] = [0, 0, 0],
+    colorScheme: ColorScheme = 'secondaryStructure',
   ): THREE.Group {
     const [cx, cy, cz] = center;
     const group = new THREE.Group();
@@ -37,8 +39,13 @@ export class RibbonRenderer {
 
       const ssKey = `${chain.id}:${caAtoms[0]!.residueSeq}`;
       const ss = residueSS.get(ssKey) ?? 'loop';
+      const hex =
+        colorScheme === 'secondaryStructure'
+          ? SS_COLORS[ss]
+          : new THREE.Color(getChainColor(chain.id)).getHex();
+
       const material = new THREE.MeshStandardMaterial({
-        color: SS_COLORS[ss],
+        color: hex,
         roughness: 0.5,
       });
 

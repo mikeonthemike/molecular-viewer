@@ -30,6 +30,13 @@ describe('store slices', () => {
       recentlyViewed: [],
       libraryExpanded: true,
       loadedLibraryId: null,
+      activeTourId: null,
+      currentStepIndex: 0,
+      savedViewerState: null,
+      restoredViewerState: null,
+      completedTours: {},
+      embedMode: false,
+      pendingEmbedTourId: null,
     });
   });
 
@@ -79,6 +86,25 @@ describe('store slices', () => {
 
     useStore.getState().setSearchQuery('lysozyme');
     expect(useStore.getState().searchQuery).toBe('lysozyme');
+  });
+
+  it('starts and exits a tour with saved viewer state', () => {
+    const saved = {
+      representation: 'ribbon' as const,
+      colorScheme: 'chain' as const,
+      cameraPosition: [0, 0, 100] as [number, number, number],
+      cameraTarget: [0, 0, 0] as [number, number, number],
+      visibleChains: ['A', 'B'],
+    };
+
+    useStore.getState().startTour('haemoglobin-oxygen', saved);
+    expect(useStore.getState().activeTourId).toBe('haemoglobin-oxygen');
+    expect(useStore.getState().currentStepIndex).toBe(0);
+
+    const restored = useStore.getState().exitTour();
+    expect(restored).toEqual(saved);
+    expect(useStore.getState().activeTourId).toBeNull();
+    expect(useStore.getState().restoredViewerState).toEqual(saved);
   });
 
   it('adds and clears measurements', () => {

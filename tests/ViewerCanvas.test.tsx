@@ -12,6 +12,10 @@ vi.mock('../src/renderers/MoleculeViewer', () => ({
     clearMeasurements: vi.fn(),
     addMeasurement: vi.fn(),
     refreshBonds: vi.fn(),
+    clearHighlights: vi.fn(),
+    highlightResidues: vi.fn(),
+    getCameraState: vi.fn(() => ({ position: [0, 0, 0], target: [0, 0, 0] })),
+    animateCameraTo: vi.fn(() => Promise.resolve()),
     dispose: vi.fn(),
   })),
 }));

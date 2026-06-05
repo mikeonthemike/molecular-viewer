@@ -1,4 +1,5 @@
 import { STRUCTURE_CATEGORIES } from '../data/library';
+import { structureHasTour } from '../data/tours';
 import type { LibraryEntry } from '../parsers/types';
 import styles from './StructureCard.module.css';
 
@@ -22,6 +23,9 @@ export function StructureCard({ entry, onLoad, loading }: StructureCardProps) {
       <p className={styles.organism}>{entry.organism}</p>
       <div className={styles.meta}>
         <span className={styles.badge}>{categoryLabel(entry.category)}</span>
+        {structureHasTour(entry.id) && (
+          <span className={styles.tourBadge}>Guided tour</span>
+        )}
         <span className={styles.atomCount}>{entry.atomCount.toLocaleString()} atoms</span>
       </div>
       <p className={styles.description}>{entry.description}</p>
