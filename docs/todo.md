@@ -30,7 +30,8 @@ Currently, structure factor files show a clear error directing users to the coor
 - [x] Guided tours: tourSlice, camera animation, highlights, TourPlayer UI
 - [x] Pilot tour: haemoglobin (1HHO) — 5 steps
 - [x] Embed mode: `?embed=true&tour=haemoglobin-oxygen`
-- [ ] Remaining tours: 1LYZ, 1GFL, 6LU7, 1GZX, 3L9H (run `npm run validate-tours` after authoring)
+- [x] Lysozyme tour (1LYZ) — 5 steps
+- [ ] Remaining tours: 1GFL, 6LU7, 1GZX, 3L9H (run `npm run validate-tours` after authoring)
 
 ## Display
 - [ ] Get the right hand panel to match the scroll for the main canvas

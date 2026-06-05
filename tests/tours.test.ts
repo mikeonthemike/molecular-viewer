@@ -18,4 +18,12 @@ describe('tours data', () => {
     expect(tour?.steps).toHaveLength(5);
     expect(getToursForStructure('1HHO')).toHaveLength(1);
   });
+
+  it('exposes lysozyme tour for library entry 1LYZ', () => {
+    const tour = getTourById('lysozyme-catalysis');
+    expect(tour?.structureId).toBe('1LYZ');
+    expect(tour?.expectedPolymerChainCount).toBe(1);
+    expect(tour?.steps).toHaveLength(5);
+    expect(getToursForStructure('1LYZ')).toHaveLength(1);
+  });
 });

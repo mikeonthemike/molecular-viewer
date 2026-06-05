@@ -12,7 +12,7 @@ export function analyseSecondaryStructure(atoms: Atom[], residues: Residue[]): R
     atomBySerial.set(atom.serial, atom);
   }
 
-  return residues.map((residue) => {
+  return residues.map((residue, index) => {
     if (residue.secondaryStructure && residue.secondaryStructure !== 'loop') {
       return { ...residue };
     }
@@ -25,18 +25,20 @@ export function analyseSecondaryStructure(atoms: Atom[], residues: Residue[]): R
       return { ...residue, secondaryStructure: 'loop' as const };
     }
 
-    const phi = dihedral(
-      findPrevC(residue, atomBySerial),
-      n,
-      ca,
-      c,
-    );
-    const psi = dihedral(
-      n,
-      ca,
-      c,
-      findNextN(residue, atomBySerial),
-    );
+    // Phi/psi need the previous residue's C and the next residue's N on the same chain
+    const prevResidue =
+      index > 0 && residues[index - 1]!.chainID === residue.chainID
+        ? residues[index - 1]
+        : null;
+    const nextResidue =
+      index < residues.length - 1 && residues[index + 1]!.chainID === residue.chainID
+        ? residues[index + 1]
+        : null;
+    const prevC = prevResidue ? findAtom(prevResidue, atomBySerial, 'C') : null;
+    const nextN = nextResidue ? findAtom(nextResidue, atomBySerial, 'N') : null;
+
+    const phi = dihedral(prevC, n, ca, c);
+    const psi = dihedral(n, ca, c, nextN);
 
     let ss: 'helix' | 'sheet' | 'loop' = 'loop';
 
@@ -62,14 +64,6 @@ function findAtom(
     const atom = atomMap.get(serial);
     if (atom && atom.name.trim() === name) return atom;
   }
-  return null;
-}
-
-function findPrevC(residue: Residue, atomMap: Map<number, Atom>): Atom | null {
-  return findAtom(residue, atomMap, 'C');
-}
-
-function findNextN(_residue: Residue, _atomMap: Map<number, Atom>): Atom | null {
   return null;
 }
 

@@ -1,9 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import type { MoleculeData, TourStep } from '../src/parsers/types';
-import { easeInOutCubic, lerp3, resolveTourCamera } from '../src/utils/tourCamera';
+import {
+  computeHighlightCentroid,
+  easeInOutCubic,
+  lerp3,
+  resolveTourCamera,
+} from '../src/utils/tourCamera';
 
 const minimalData: MoleculeData = {
-  atoms: [],
+  atoms: [
+    {
+      serial: 1,
+      name: 'CA',
+      element: 'C',
+      residueName: 'HIS',
+      chainID: 'A',
+      residueSeq: 87,
+      x: 10,
+      y: 20,
+      z: 30,
+    },
+  ],
   bonds: [],
   chains: [
     {
@@ -40,5 +57,26 @@ describe('tourCamera', () => {
     const camera = resolveTourCamera(step, minimalData);
     expect(camera.position).toEqual([10, 20, 130]);
     expect(camera.target).toEqual([10, 20, 30]);
+  });
+
+  it('anchors highlight steps on the residue centroid', () => {
+    const step: TourStep = {
+      id: 'focus',
+      title: 'Focus',
+      body: 'Focus',
+      cameraPosition: [0, 0, 0],
+      cameraTarget: [0, 0, 0],
+      cameraPositionScale: [0, 0, 1],
+      cameraTargetScale: [0, 0, 0],
+      highlightResidues: [87],
+      highlightChains: ['A'],
+    };
+
+    const anchor = computeHighlightCentroid(step, minimalData);
+    expect(anchor).toEqual([10, 20, 30]);
+
+    const camera = resolveTourCamera(step, minimalData);
+    expect(camera.target).toEqual(anchor);
+    expect(camera.position).toEqual([10, 20, 70]);
   });
 });

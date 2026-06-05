@@ -19,6 +19,38 @@ export function lerp3(
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
+/** Average world-space centroid of all highlighted residues on a tour step */
+export function computeHighlightCentroid(
+  step: TourStep,
+  data: MoleculeData,
+): [number, number, number] | null {
+  if (step.highlightResidues.length === 0) return null;
+
+  const chains =
+    step.highlightChains && step.highlightChains.length > 0
+      ? step.highlightChains
+      : data.chains.map((c) => c.id);
+
+  let sx = 0;
+  let sy = 0;
+  let sz = 0;
+  let count = 0;
+
+  for (const seq of step.highlightResidues) {
+    for (const chainID of chains) {
+      const centroid = residueCentroid(data, seq, chainID);
+      if (!centroid) continue;
+      sx += centroid[0];
+      sy += centroid[1];
+      sz += centroid[2];
+      count += 1;
+    }
+  }
+
+  if (count === 0) return null;
+  return [sx / count, sy / count, sz / count];
+}
+
 function residueCentroid(
   data: MoleculeData,
   seq: number,
@@ -51,11 +83,13 @@ function residueCentroid(
 export function resolveTourCamera(step: TourStep, data: MoleculeData): ResolvedCamera {
   const [cx, cy, cz] = data.center;
   const r = data.boundingRadius;
+  const highlightAnchor = computeHighlightCentroid(step, data);
+  const anchor = highlightAnchor ?? [cx, cy, cz];
 
   let position: [number, number, number];
   if (step.cameraPositionScale) {
     const [sx, sy, sz] = step.cameraPositionScale;
-    position = [cx + sx * r, cy + sy * r, cz + sz * r];
+    position = [anchor[0] + sx * r, anchor[1] + sy * r, anchor[2] + sz * r];
   } else {
     position = step.cameraPosition;
   }
@@ -63,11 +97,9 @@ export function resolveTourCamera(step: TourStep, data: MoleculeData): ResolvedC
   let target: [number, number, number];
   if (step.cameraTargetScale) {
     const [tx, ty, tz] = step.cameraTargetScale;
-    target = [cx + tx * r, cy + ty * r, cz + tz * r];
-  } else if (step.highlightResidues.length > 0) {
-    const chainID = step.highlightChains?.[0];
-    const centroid = residueCentroid(data, step.highlightResidues[0]!, chainID);
-    target = centroid ?? [cx, cy, cz];
+    target = [anchor[0] + tx * r, anchor[1] + ty * r, anchor[2] + tz * r];
+  } else if (highlightAnchor) {
+    target = highlightAnchor;
   } else {
     target = step.cameraTarget;
   }
