@@ -1,6 +1,7 @@
 {
   "name": "molecule-viewer",
   "private": true,
+  "license": "MIT",
   "version": "1.0.2",
   "type": "module",
   "scripts": {
