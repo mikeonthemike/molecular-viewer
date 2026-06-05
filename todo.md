@@ -25,3 +25,6 @@ Currently, structure factor files show a clear error directing users to the coor
 ## Search and Index
 - [ ] Search for specific molecules that can then be looked up
 - 
+
+## Display
+- [ ] Get the right hand panel to match the scroll for the main canvas
