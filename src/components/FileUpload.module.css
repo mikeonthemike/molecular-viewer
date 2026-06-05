@@ -4,6 +4,12 @@
   border-bottom: 1px solid #1e2836;
 }
 
+.compact {
+  padding: 0.75rem 0 0;
+  background: transparent;
+  border-bottom: none;
+}
+
 .dropzone {
   border: 1px dashed #2a3544;
   border-radius: 6px;

@@ -1,0 +1,136 @@
+.panel {
+  padding: 1.25rem;
+  background: #121820;
+  border: 1px solid #2a4058;
+  border-radius: 10px;
+}
+
+.heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8ecf1;
+  margin-bottom: 0.25rem;
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: #8899aa;
+  margin-bottom: 1rem;
+}
+
+.rcsbRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rcsbLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #c8d4e0;
+  white-space: nowrap;
+}
+
+.rcsbInput {
+  width: 7rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 1.125rem;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #1a2332;
+  border: 2px solid #3a5068;
+  border-radius: 6px;
+  color: #e8ecf1;
+  text-align: center;
+}
+
+.rcsbInput:focus {
+  outline: none;
+  border-color: #3a7bc8;
+}
+
+.loadBtn {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: #1a5a9a;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.loadBtn:hover:not(:disabled) {
+  background: #2270b8;
+}
+
+.loadBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  font-size: 0.75rem;
+  color: #5a6a7a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #1e2836;
+}
+
+.dropzone {
+  border: 1px dashed #2a3544;
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dropzone.dragOver {
+  border-color: #3a7bc8;
+  background: #1a2840;
+}
+
+.dropText {
+  font-size: 0.8125rem;
+  color: #6a7a8a;
+}
+
+.browseBtn {
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  background: transparent;
+  border: 1px solid #2a3544;
+  border-radius: 4px;
+  color: #8899aa;
+  cursor: pointer;
+}
+
+.browseBtn:hover {
+  border-color: #3a7bc8;
+  color: #c8d4e0;
+}
+
+.fileInput {
+  display: none;
+}
+
+.error {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: #ff6b6b;
+}

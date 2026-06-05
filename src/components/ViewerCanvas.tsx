@@ -8,6 +8,7 @@ export function ViewerCanvas() {
   const viewerRef = useRef<MoleculeViewer | null>(null);
 
   const data = useStore((s) => s.data);
+  const loading = useStore((s) => s.loading);
   const structureVersion = useStore((s) => s.structureVersion);
   const representation = useStore((s) => s.representation);
   const colorScheme = useStore((s) => s.colorScheme);
@@ -138,6 +139,12 @@ export function ViewerCanvas() {
   return (
     <div className={styles.container} data-testid="viewer-canvas">
       <canvas ref={canvasRef} className={styles.canvas} />
+      {loading && (
+        <div className={styles.loadingOverlay} aria-live="polite" aria-busy="true">
+          <div className={styles.spinner} />
+          <p className={styles.loadingText}>Loading structure…</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,8 +23,8 @@ Currently, structure factor files show a clear error directing users to the coor
 - [ ] Find a good source for information to pull in and how to cache/persist it
 
 ## Search and Index
-- [ ] Search for specific molecules that can then be looked up
-- 
+- [x] Curated structure library (Phase 1): category filter, search, RCSB fetch on demand
+- [ ] Full structure search / index beyond the curated library
 
 ## Display
 - [ ] Get the right hand panel to match the scroll for the main canvas

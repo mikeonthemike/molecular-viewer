@@ -68,3 +68,29 @@ export type MoleculeResult =
   | { type: 'secondaryStructure'; residues: Residue[] }
   | { type: 'spatialIndex'; ready: true }
   | { type: 'error'; message: string };
+
+export type StructureCategory =
+  | 'enzyme'
+  | 'receptor'
+  | 'antibody'
+  | 'virus'
+  | 'dna-rna'
+  | 'structural'
+  | 'hormone'
+  | 'transport';
+
+export interface LibraryEntry {
+  id: string;
+  accession: string;
+  name: string;
+  organism: string;
+  category: StructureCategory;
+  tags: string[];
+  description: string;
+  atomCount: number;
+  resolution: number;
+  year: number;
+  defaultRepresentation: RepresentationMode;
+  defaultColorScheme: ColorScheme;
+  highlightResidues?: number[];
+}

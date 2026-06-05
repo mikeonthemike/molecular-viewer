@@ -1,0 +1,98 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #121820;
+  border: 1px solid #1e2836;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+
+.card:hover {
+  border-color: #2a4058;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #e8ecf1;
+}
+
+.accession {
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: #5a8ab8;
+}
+
+.organism {
+  font-size: 0.75rem;
+  color: #8899aa;
+  font-style: italic;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  background: #1a3048;
+  color: #7ab0e0;
+}
+
+.atomCount {
+  font-size: 0.6875rem;
+  color: #6a7a8a;
+}
+
+.description {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #8899aa;
+  flex: 1;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tag {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background: #1a2332;
+  color: #6a8aaa;
+}
+
+.loadBtn {
+  margin-top: auto;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  background: #1a4a7a;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.loadBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

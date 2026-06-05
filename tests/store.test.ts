@@ -25,6 +25,11 @@ describe('store slices', () => {
       measurements: [],
       highlightedChain: null,
       pendingMeasureAtom: null,
+      activeCategory: 'all',
+      searchQuery: '',
+      recentlyViewed: [],
+      libraryExpanded: true,
+      loadedLibraryId: null,
     });
   });
 
@@ -56,6 +61,24 @@ describe('store slices', () => {
     expect(useStore.getState().selectedAtom).toEqual(atom);
     useStore.getState().selectAtom(null);
     expect(useStore.getState().selectedAtom).toBeNull();
+  });
+
+  it('tracks recently viewed structures', () => {
+    useStore.getState().addRecentlyViewed('1CRN');
+    useStore.getState().addRecentlyViewed('1HHO');
+    useStore.getState().addRecentlyViewed('1CRN');
+
+    const recent = useStore.getState().recentlyViewed;
+    expect(recent).toEqual(['1CRN', '1HHO']);
+    expect(recent.length).toBeLessThanOrEqual(5);
+  });
+
+  it('filters library category and search', () => {
+    useStore.getState().setActiveCategory('enzyme');
+    expect(useStore.getState().activeCategory).toBe('enzyme');
+
+    useStore.getState().setSearchQuery('lysozyme');
+    expect(useStore.getState().searchQuery).toBe('lysozyme');
   });
 
   it('adds and clears measurements', () => {

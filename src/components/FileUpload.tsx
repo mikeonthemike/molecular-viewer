@@ -1,84 +1,39 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { processMoleculeInWorker } from '../engine/processMolecule';
-import { parseMoleculeFile } from '../parsers/parseMoleculeFile';
-import { fetchRCSBStructure } from '../parsers/mmCIFParser';
+import { useStructureLoader } from '../hooks/useStructureLoader';
 import { useStore } from '../store';
 import styles from './FileUpload.module.css';
 
-export function FileUpload() {
+interface FileUploadProps {
+  /** Compact layout for embedding inside the library browser */
+  compact?: boolean;
+}
+
+export function FileUpload({ compact = false }: FileUploadProps) {
   const [accession, setAccession] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const workerCleanupRef = useRef<(() => void) | null>(null);
 
-  const setData = useStore((s) => s.setData);
-  const setLoading = useStore((s) => s.setLoading);
-  const setError = useStore((s) => s.setError);
-  const updateBonds = useStore((s) => s.updateBonds);
-  const updateSecondaryStructure = useStore((s) => s.updateSecondaryStructure);
-  const setVisibleChains = useStore((s) => s.setVisibleChains);
-  const clearMeasurements = useStore((s) => s.clearMeasurements);
-  const selectAtom = useStore((s) => s.selectAtom);
+  const { loadFromFile, fetchAndLoad } = useStructureLoader();
 
-  useEffect(
-    () => () => {
-      workerCleanupRef.current?.();
-    },
-    [],
-  );
+  const loading = useStore((s) => s.loading);
+  const error = useStore((s) => s.error);
+  const atomCount = useStore((s) => s.data?.atoms.length ?? 0);
+  const structureVersion = useStore((s) => s.structureVersion);
+  const loadedLibraryId = useStore((s) => s.loadedLibraryId);
 
-  const loadMolecule = useCallback(
-    (data: ReturnType<typeof parseMoleculeFile>, sourceName: string) => {
-      workerCleanupRef.current?.();
-
-      setLoading(true);
-      setError(null);
-      clearMeasurements();
-      selectAtom(null);
-      setLoadedName(sourceName);
-      setVisibleChains(new Set(data.chains.map((c) => c.id)));
-      setData(data);
-
-      let pending = 3;
-      workerCleanupRef.current = processMoleculeInWorker(data, (result) => {
-        if (result.type === 'bonds') {
-          updateBonds(result.bonds);
-        } else if (result.type === 'secondaryStructure') {
-          updateSecondaryStructure(result.residues);
-        } else if (result.type === 'error') {
-          setError(result.message);
-        }
-
-        pending -= 1;
-        if (pending <= 0) setLoading(false);
-      });
-    },
-    [
-      setData,
-      setLoading,
-      setError,
-      updateBonds,
-      updateSecondaryStructure,
-      setVisibleChains,
-      clearMeasurements,
-      selectAtom,
-    ],
-  );
+  useEffect(() => {
+    if (structureVersion > 0 && loadedLibraryId) {
+      setLoadedName(loadedLibraryId);
+    }
+  }, [structureVersion, loadedLibraryId]);
 
   const handleFile = useCallback(
     async (file: File) => {
-      try {
-        const text = await file.text();
-        const data = parseMoleculeFile(file.name, text);
-        loadMolecule(data, file.name);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to parse file';
-        setError(message);
-        setLoading(false);
-      }
+      setLoadedName(file.name);
+      await loadFromFile(file);
     },
-    [loadMolecule, setError, setLoading],
+    [loadFromFile],
   );
 
   const handleDrop = useCallback(
@@ -92,24 +47,12 @@ export function FileUpload() {
   );
 
   const handleFetch = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchRCSBStructure(accession);
-      loadMolecule(data, accession.toUpperCase());
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fetch failed';
-      setError(message);
-      setLoading(false);
-    }
-  }, [accession, loadMolecule, setError, setLoading]);
-
-  const loading = useStore((s) => s.loading);
-  const error = useStore((s) => s.error);
-  const atomCount = useStore((s) => s.data?.atoms.length ?? 0);
+    setLoadedName(accession.toUpperCase());
+    await fetchAndLoad(accession);
+  }, [accession, fetchAndLoad]);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} ${compact ? styles.compact : ''}`}>
       <div
         className={`${styles.dropzone} ${dragOver ? styles.dragOver : ''}`}
         onDragOver={(e) => {
@@ -135,7 +78,6 @@ export function FileUpload() {
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void handleFile(file);
-            // Allow re-selecting the same file
             e.target.value = '';
           }}
         />
@@ -150,18 +92,26 @@ export function FileUpload() {
           onChange={(e) => setAccession(e.target.value.toUpperCase())}
           className={styles.accessionInput}
         />
-        <button type="button" onClick={() => void handleFetch()} disabled={loading || accession.length !== 4}>
+        <button
+          type="button"
+          onClick={() => void handleFetch()}
+          disabled={loading || accession.length !== 4}
+        >
           Fetch
         </button>
       </div>
 
-      {loading && <p className={styles.status}>Processing structure…</p>}
-      {!loading && loadedName && atomCount > 0 && (
+      {!compact && loading && <p className={styles.status}>Processing structure…</p>}
+      {!compact && !loading && loadedName && atomCount > 0 && (
         <p className={styles.status}>
           Loaded {loadedName} ({atomCount.toLocaleString()} atoms)
         </p>
       )}
-      {error && <p className={styles.error} role="alert">{error}</p>}
+      {!compact && error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

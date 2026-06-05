@@ -1,0 +1,73 @@
+.browser {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #0a0e14;
+}
+
+.content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.libraryDivider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #5a6a7a;
+}
+
+.libraryDivider::before,
+.libraryDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #1e2836;
+}
+
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.75rem 0;
+}
+
+.pill,
+.pillActive {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #2a3544;
+  background: transparent;
+  color: #8899aa;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pill:hover {
+  border-color: #3a5068;
+  color: #c8d4e0;
+}
+
+.pillActive {
+  background: #1a4a7a;
+  border-color: #1a4a7a;
+  color: #fff;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.empty {
+  margin: 1rem 0;
+  font-size: 0.8125rem;
+  color: #6a7a8a;
+  text-align: center;
+}
